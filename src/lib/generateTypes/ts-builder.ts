@@ -1,5 +1,8 @@
 import { Collection, Collections, Field } from "lib/types";
 
+type CustomTypesMap = Record<string, Array<CustomType>>;
+type CustomType = { name: string; type: string };
+
 export class TypeBuilder {
   constructor(
     private collections: Collections,
@@ -8,7 +11,7 @@ export class TypeBuilder {
     private treatRequiredAsNonNull: boolean,
   ) {}
 
-  build() {
+  build(customTypes?: CustomTypesMap) {
     let ret = "";
     const types: string[] = [];
 
@@ -23,7 +26,11 @@ export class TypeBuilder {
           : `${collectionName}: ${typeName}`,
       );
 
-      ret += this.collectionType(typeName, collection);
+      ret += this.collectionType(
+        typeName,
+        collection,
+        customTypes?.[collectionName],
+      );
     }
 
     ret +=
@@ -34,11 +41,18 @@ export class TypeBuilder {
     return ret;
   }
 
-  private collectionType(name: string, collection: Collection) {
+  private collectionType(
+    name: string,
+    collection: Collection,
+    customTypes?: CustomType[],
+  ) {
     let ret = `export type ${name} = {\n`;
     for (const field of collection.fields) {
       if (this.isFieldPresentational(field)) continue;
       ret += this.fieldDef(field);
+    }
+    for (const { name, type } of customTypes ?? []) {
+      ret += `	${name}?: ${type};\n`;
     }
     ret += "};\n\n";
     return ret;
@@ -85,7 +99,8 @@ export class TypeBuilder {
 
     if (
       field.schema?.is_nullable &&
-      !(this.treatRequiredAsNonNull && field.meta?.required)
+      !(this.treatRequiredAsNonNull && field.meta?.required) &&
+      !["many", "any"].includes(field.relation?.type ?? "")
     ) {
       if (field.relation && this.useIntersectionTypes) {
         type = `(${type}) | null`;

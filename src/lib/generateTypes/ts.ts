@@ -16,5 +16,19 @@ export default async function generateTsTypes(
     sdk11,
     treatRequiredAsNonNull,
   );
-  return typeBuilder.build();
+
+  const computedVernetzbarTypes = {
+    station: [
+      {
+        name: "visited_at",
+        type: "string | null",
+      },
+      {
+        name: "voted_at",
+        type: "string | null",
+      },
+    ],
+  };
+
+  return typeBuilder.build(computedVernetzbarTypes);
 }
