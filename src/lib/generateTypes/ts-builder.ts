@@ -5,6 +5,7 @@ export class TypeBuilder {
     private collections: Collections,
     private useIntersectionTypes: boolean,
     private sdk11: boolean,
+    private treatRequiredAsNonNull: boolean,
   ) {}
 
   build() {
@@ -97,7 +98,10 @@ export class TypeBuilder {
       }
     }
 
-    if (field.schema?.is_nullable) {
+    if (
+      field.schema?.is_nullable &&
+      !(this.treatRequiredAsNonNull && field.meta?.required)
+    ) {
       if (field.relation && this.useIntersectionTypes) {
         type = `(${type}) | null`;
       } else {
