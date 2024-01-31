@@ -29,6 +29,11 @@
             Generate Types for Directus SDK >= v11
           </span>
         </v-checkbox>
+        <v-checkbox v-model="treatRequiredAsNonNull" @click="generateTypes">
+          <span>
+          	Treat required fields as non nullable. 
+          </span>
+        </v-checkbox>
       </div>
     </div>
   </private-view>
@@ -50,10 +55,14 @@ export default {
     const sdk11 = localStorage.getItem(
       "directus-extension-generate-types-sdk11"
     ) !== "false";
+    const treatRequiredAsNonNull = localStorage.getItem(
+      "directus-extension-generate-types-treat-required-as-non-null"
+    ) !== "true";
     return {
       types: "",
       languages,
       useIntersectionTypes,
+			treatRequiredAsNonNull,
       sdk11,
       loading: false,
     };
@@ -69,7 +78,11 @@ export default {
         "directus-extension-generate-types-sdk11",
         this.sdk11
       );
-      generateTsTypes(this.api, this.useIntersectionTypes, this.sdk11).then((types) => {
+      localStorage.setItem(
+        "directus-extension-generate-types-treat-required-as-non-null",
+        this.treatRequiredAsNonNull
+      );
+      generateTsTypes(this.api, this.useIntersectionTypes, this.sdk11, this.treatRequiredAsNonNull).then((types) => {
         this.types = types;
         this.loading = false;
       });

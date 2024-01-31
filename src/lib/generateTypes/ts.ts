@@ -7,9 +7,14 @@ export default async function generateTsTypes(
   api: Axios,
   useIntersectionTypes = false,
   sdk11 = true,
+  treatRequiredAsNonNull = false,
 ) {
   const collections = await getCollections(api);
-	const typeBuilder = new TypeBuilder(collections, useIntersectionTypes, sdk11);
+  const typeBuilder = new TypeBuilder(
+    collections,
+    useIntersectionTypes,
+    sdk11,
+    treatRequiredAsNonNull,
+  );
   return typeBuilder.build();
 }
-
