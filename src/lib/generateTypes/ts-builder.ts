@@ -116,6 +116,18 @@ export class TypeBuilder {
       case "json":
       case "csv":
         return this.jsonType(field);
+      case "geometry.Point":
+        return '{ type: "Point", coordinates: [number, number] }';
+      case "geometry.MultiPoint":
+        return '{ type: "MultiPoint", coordinates: [number, number][] }';
+      case "geometry.LineString":
+        return '{ type: "LineString", coordinates: [number, number][] }';
+      case "geometry.MultiLineString":
+        return '{ type: "MultiLineString", coordinates: [number, number][][] }';
+      case "geometry.Polygon":
+        return '{ type: "Polygon", coordinates: [number, number][][] }';
+      case "geometry.MultiPolygon":
+        return '{ type: "MultiPolygon", coordinates: [number, number][][][] }';
       default: {
         switch (field.meta.interface) {
           case "select-dropdown":
