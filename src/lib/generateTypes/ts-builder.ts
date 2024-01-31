@@ -117,11 +117,32 @@ export class TypeBuilder {
   }
 
   private primitiveType(field: Field) {
-    if (["integer", "bigInteger", "float", "decimal"].includes(field.type))
-      return "number";
-    else if (["boolean"].includes(field.type)) return "boolean";
-    else if (["json", "csv"].includes(field.type)) return "unknown";
-    else return "string";
+    switch (field.type) {
+      case "integer":
+      case "bigInteger":
+      case "float":
+      case "decimal":
+        return "number";
+      case "boolean":
+        return "boolean";
+      case "json":
+      case "csv":
+        return "unknown";
+      case "geometry.Point":
+        return '{ type: "Point", coordinates: [number, number] }';
+      case "geometry.MultiPoint":
+        return '{ type: "MultiPoint", coordinates: [number, number][] }';
+      case "geometry.LineString":
+        return '{ type: "LineString", coordinates: [number, number][] }';
+      case "geometry.MultiLineString":
+        return '{ type: "MultiLineString", coordinates: [number, number][][] }';
+      case "geometry.Polygon":
+        return '{ type: "Polygon", coordinates: [number, number][][] }';
+      case "geometry.MultiPolygon":
+        return '{ type: "MultiPolygon", coordinates: [number, number][][][] }';
+      default:
+        return "string";
+    }
   }
 
   private pascalCase(str: string) {
