@@ -42,22 +42,44 @@ export async function getCollections(api) {
       warn(`Relation on field '${relation.field}' in collection '${relation.collection}' has no meta. Maybe missing a relation inside directus_relations table.`);
       return;
     }
+
     const oneField = collections[relation.meta.one_collection]?.fields.find(
-      (field) => field.field === relation.meta.one_field
+      (field) => field.field === relation.meta.one_field,
     );
-    const manyField = collections[relation.meta.many_collection]?.fields.find(
-      (field) => field.field === relation.meta.many_field
-    );
-    if (oneField)
+    if (oneField) {
       oneField.relation = {
         type: "many",
         collection: relation.meta.many_collection,
       };
-    if (manyField)
-      manyField.relation = {
-        type: "one",
-        collection: relation.meta.one_collection,
-      };
+    }
+
+    const manyField = collections[relation.meta.many_collection]?.fields.find(
+      (field) => field.field === relation.meta.many_field,
+    );
+    if (manyField) {
+      const isM2ARelation = relation.meta.one_allowed_collections != null;
+      if (isM2ARelation) {
+        manyField.relation = {
+          type: "any",
+          collections: relation.meta.one_allowed_collections,
+        };
+
+        const manyTypeField = collections[manyField.collection]?.fields.find(
+          (field) => field.field === relation.meta?.one_collection_field,
+        );
+        if (manyTypeField) {
+          manyTypeField.relation = {
+            type: "any_type",
+            collections: relation.meta.one_allowed_collections,
+          };
+        }
+      } else {
+        manyField.relation = {
+          type: "one",
+          collection: relation.meta.one_collection!,
+        };
+      }
+    }
   });
   return collections;
 }
