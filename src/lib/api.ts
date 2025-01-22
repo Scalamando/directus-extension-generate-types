@@ -48,16 +48,36 @@ export async function getCollections(api) {
     const manyField = collections[relation.meta.many_collection]?.fields.find(
       (field) => field.field === relation.meta.many_field
     );
-    if (oneField)
+    if (oneField) {
       oneField.relation = {
         type: "many",
         collection: relation.meta.many_collection,
       };
-    if (manyField)
-      manyField.relation = {
-        type: "one",
-        collection: relation.meta.one_collection,
-      };
+    }
+    if (manyField) {
+      const isM2ARelation = relation.meta.one_allowed_collections != null;
+      if (isM2ARelation) {
+        manyField.relation = {
+          type: "any",
+          collections: relation.meta.one_allowed_collections,
+        };
+
+        const manyTypeField = collections[manyField.collection]?.fields.find(
+          (field) => field.field === relation.meta?.one_collection_field,
+        );
+        if (manyTypeField) {
+          manyTypeField.relation = {
+            type: "any_type",
+            collections: relation.meta.one_allowed_collections,
+          };
+        }
+      } else {
+        manyField.relation = {
+          type: "one",
+          collection: relation.meta.one_collection!,
+        };
+      }
+    }
   });
   return collections;
 }
