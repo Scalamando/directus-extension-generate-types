@@ -54,10 +54,27 @@ export async function getCollections(api) {
         collection: relation.meta.many_collection,
       };
     if (manyField)
-      manyField.relation = {
-        type: "one",
-        collection: relation.meta.one_collection,
-      };
+      if (relation.meta.one_allowed_collections != null) {
+        manyField.relation = {
+          type: "any",
+          collections: relation.meta.one_allowed_collections,
+        };
+
+        const manyTypeField = collections[manyField.collection]?.fields.find(
+          (field) => field.field === relation.meta?.one_collection_field,
+        );
+        if (manyTypeField) {
+          manyTypeField.relation = {
+            type: "any_type",
+            collections: relation.meta.one_allowed_collections,
+          };
+        }
+      } else {
+        manyField.relation = {
+          type: "one",
+          collection: relation.meta.one_collection!,
+        };
+      }
   });
   return collections;
 }
