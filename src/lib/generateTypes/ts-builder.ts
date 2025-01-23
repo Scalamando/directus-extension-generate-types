@@ -1,54 +1,89 @@
 import { Collection, Collections, Field } from "lib/types";
 
+interface CollectionType {
+  identifier: string;
+  typeName: string;
+  isSingleton: boolean;
+  fields: FieldType[];
+}
+
+interface FieldType {
+  identifier: string;
+  type: string;
+  isNullable: boolean;
+  relation: "one" | "many" | "any" | "any_type" | null;
+}
+
 export class TypeBuilder {
   constructor(
     private collections: Collections,
     private useIntersectionTypes: boolean,
-    private sdk11: boolean,
+    private isSdk11: boolean,
   ) {}
 
   build() {
-    let ret = "";
-    const types: string[] = [];
-
+    const types: CollectionType[] = [];
     for (const collection of Object.values(this.collections)) {
-      const collectionName = collection.collection;
-      const typeName = this.pascalCase(collectionName);
-      const isSingleton = collection.meta?.singleton === true;
-
-      types.push(
-        this.sdk11
-          ? `${collectionName}: ${typeName}${isSingleton ? "" : "[]"}`
-          : `${collectionName}: ${typeName}`,
-      );
-
-      ret += this.collectionTypeString(typeName, collection);
+      types.push(this.getCollectionType(collection));
     }
-
-    ret +=
-      "export type CustomDirectusTypes = {\n" +
-      types.map((x) => `  ${x};`).join("\n") +
-      "\n};\n";
-
-    return ret;
+    return this.toTypeString(types);
   }
 
-  private collectionTypeString(name: string, collection: Collection) {
-    const types: string[] = [];
+  private getCollectionType(collection: Collection): CollectionType {
+    const fields: FieldType[] = [];
 
     for (const field of collection.fields) {
-      if (this.isFieldPresentational(field)) continue;
-      types.push(this.fieldTypeString(field));
+      if (!this.isFieldPresentational(field)) {
+        fields.push({
+          identifier: this.enquote(field.field),
+          type: this.resolveFieldType(field),
+          isNullable: field.schema?.is_nullable === true,
+          relation: field.relation?.type ?? null,
+        });
+      }
     }
 
+    return {
+      identifier: collection.collection,
+      typeName: this.pascalCase(collection.collection),
+      isSingleton: collection.meta?.singleton === true,
+      fields,
+    };
+  }
+
+  private isFieldPresentational(field: Field): boolean {
+    if (field.meta?.interface == null) return false;
     return (
-      `export type ${name} = {\n` +
-      types.map((x) => `  ${x};`).join("\n") +
-      "\n};\n\n"
+      field.meta?.interface.startsWith("presentation-") ||
+      field.meta?.interface.startsWith("group-")
     );
   }
 
-  private fieldTypeString(field: Field) {
+  private toTypeString(collections: CollectionType[]) {
+    let typeStr = "";
+
+    for (const c of collections) {
+      const fieldStr = (f: FieldType) =>
+        `  ${f.identifier}${f.isNullable && !this.isSdk11 ? "?" : ""}: ${f.type}${f.isNullable ? " | null" : ""};`;
+
+      typeStr +=
+        `export interface ${c.typeName} {\n` +
+        c.fields.map(fieldStr).join("\n") +
+        "\n};\n\n";
+    }
+
+    const collStr = (c: CollectionType) =>
+      `  ${c.identifier}: ${c.typeName}${c.isSingleton || this.isSdk11 ? "" : "[]"},`;
+
+    typeStr +=
+      "export interface CustomDirectusTypes {\n" +
+      collections.map(collStr).join("\n") +
+      "\n};\n";
+
+    return typeStr;
+  }
+
+  private resolveFieldType(field: Field) {
     let type = "";
 
     // Type of the foreign table's primary key (in case relation isn't resolved)
@@ -91,24 +126,7 @@ export class TypeBuilder {
       }
     }
 
-    if (field.schema?.is_nullable) {
-      if (field.relation && this.useIntersectionTypes) {
-        type = `(${type}) | null`;
-      } else {
-        type += ` | null`;
-      }
-    }
-
-    const identifier = this.enquote(field.field);
-    return `${identifier}${field.schema?.is_nullable ? "?" : ""}: ${this.fieldTypeString(field)}`;
-  }
-
-  private isFieldPresentational(field: Field): boolean {
-    if (field.meta?.interface == null) return false;
-    return (
-      field.meta?.interface.startsWith("presentation-") ||
-      field.meta?.interface.startsWith("group-")
-    );
+    return type;
   }
 
   private fieldType(field: Field) {
@@ -154,8 +172,11 @@ export class TypeBuilder {
       case "boolean":
         return "boolean";
       case "json":
+        return "json";
       case "csv":
-        return "unknown";
+        return "dsv";
+      case "datetime":
+        return "datetime";
       default:
         return "string";
     }
@@ -186,7 +207,7 @@ export class TypeBuilder {
           .join(" | ")})[]`;
       }
       default:
-        return "unknown";
+        return "json";
     }
   }
 
