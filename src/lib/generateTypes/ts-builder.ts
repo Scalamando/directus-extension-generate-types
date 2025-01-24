@@ -73,10 +73,10 @@ export class TypeBuilder {
     }
 
     const collStr = (c: CollectionType) =>
-      `  ${c.identifier}: ${c.typeName}${c.isSingleton || this.isSdk11 ? "" : "[]"},`;
+      `  ${c.identifier}: ${c.typeName}${c.isSingleton || !this.isSdk11 ? "" : "[]"};`;
 
     typeStr +=
-      "export interface CustomDirectusTypes {\n" +
+      "export type CustomDirectusTypes = {\n" +
       collections.map(collStr).join("\n") +
       "\n};\n";
 
