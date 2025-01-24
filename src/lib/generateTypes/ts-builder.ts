@@ -1,5 +1,5 @@
 import { Collection, Collections, Field } from "lib/types";
-import pluralize from "pluralize-esm"
+import pluralize from "pluralize-esm";
 
 interface CollectionType {
   identifier: string;
@@ -18,7 +18,7 @@ interface FieldType {
 export class TypeBuilder {
   constructor(
     private collections: Collections,
-    private useIntersectionTypes: boolean,
+    private requiredAsNonNull: boolean,
     private isSdk11: boolean,
   ) {}
 
@@ -35,10 +35,12 @@ export class TypeBuilder {
 
     for (const field of collection.fields) {
       if (!this.isFieldPresentational(field)) {
+        const isNullable = field.schema?.is_nullable === true;
+        const isRequired = field.meta?.required === true;
         fields.push({
           identifier: this.enquote(field.field),
           type: this.resolveFieldType(field),
-          isNullable: field.schema?.is_nullable === true,
+          isNullable: isNullable && !(isRequired && this.requiredAsNonNull),
           relation: field.relation?.type ?? null,
         });
       }
@@ -114,11 +116,13 @@ export class TypeBuilder {
 
     // Type of related collection(s)
     if (field.relation && field.relation.type !== "any_type") {
-      type += this.useIntersectionTypes ? " & " : " | ";
+      type += " | ";
 
       if (field.relation.type === "any") {
         // m2a collections have multiple related types
-        type += field.relation.collections.map((s) => this.toTypeName(s)).join(" | ");
+        type += field.relation.collections
+          .map((s) => this.toTypeName(s))
+          .join(" | ");
       } else {
         type += field.relation.collection
           ? this.toTypeName(field.relation.collection)
@@ -151,7 +155,8 @@ export class TypeBuilder {
         switch (field.meta.interface) {
           case "select-dropdown":
           case "select-radio":
-            return field.meta.options.allowOther || field.meta.options?.choices?.length === 0
+            return field.meta.options.allowOther ||
+              field.meta.options?.choices?.length === 0
               ? this.primitiveType(field.type)
               : field.meta.options.choices
                   .map(({ value }) => `"${value}"`)

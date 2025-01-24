@@ -15,13 +15,9 @@
         </p>
         <CodeComponent :value="exampleCode()" language="typescript" />
         <h3 class="type-title">Options</h3>
-        <v-checkbox v-model="useIntersectionTypes" @click="generateTypes">
+        <v-checkbox v-model="requiredAsNonNull" @click="generateTypes">
           <span>
-            Use Intersection Types (<code>&</code>) instead of Union Types
-            (<code>|</code>) for relational fields.
-            <a href="https://github.com/maltejur/directus-extension-generate-types/pull/3#issuecomment-1037243032">
-              Learn more
-            </a>
+            Treat required fields as non-nullable.
           </span>
         </v-checkbox>
         <v-checkbox v-model="sdk11" @click="generateTypes">
@@ -44,8 +40,8 @@ export default {
   components: { NavbarComponent, CodeComponent },
   inject: ["api"],
   data() {
-    const useIntersectionTypes = localStorage.getItem(
-      "directus-extension-generate-types-use-intersection-types"
+    const requiredAsNonNull = localStorage.getItem(
+      "directus-extension-generate-types-required-as-non-null"
     ) === "true";
     const sdk11 = localStorage.getItem(
       "directus-extension-generate-types-sdk11"
@@ -53,7 +49,7 @@ export default {
     return {
       types: "",
       languages,
-      useIntersectionTypes,
+      requiredAsNonNull,
       sdk11,
       loading: false,
     };
@@ -62,14 +58,14 @@ export default {
     generateTypes() {
       console.log(window.localStorage);
       localStorage.setItem(
-        "directus-extension-generate-types-use-intersection-types",
-        this.useIntersectionTypes
+        "directus-extension-generate-types-required-as-non-null",
+        this.requiredAsNonNull
       );
       localStorage.setItem(
         "directus-extension-generate-types-sdk11",
         this.sdk11
       );
-      generateTsTypes(this.api, this.useIntersectionTypes, this.sdk11).then((types) => {
+      generateTsTypes(this.api, this.requiredAsNonNull, this.sdk11).then((types) => {
         this.types = types;
         this.loading = false;
       });
