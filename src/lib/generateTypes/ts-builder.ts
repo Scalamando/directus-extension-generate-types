@@ -172,11 +172,11 @@ export class TypeBuilder {
       case "boolean":
         return "boolean";
       case "json":
-        return "json";
+        return `"json"`;
       case "csv":
-        return "dsv";
+        return `"csv"`;
       case "datetime":
-        return "datetime";
+        return `"datetime"`;
       default:
         return "string";
     }
@@ -207,7 +207,7 @@ export class TypeBuilder {
           .join(" | ")})[]`;
       }
       default:
-        return "json";
+        return `"json"`;
     }
   }
 
