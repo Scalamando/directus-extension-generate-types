@@ -151,7 +151,7 @@ export class TypeBuilder {
         switch (field.meta.interface) {
           case "select-dropdown":
           case "select-radio":
-            return field.meta.options.allowOther
+            return field.meta.options.allowOther || field.meta.options?.choices?.length === 0
               ? this.primitiveType(field.type)
               : field.meta.options.choices
                   .map(({ value }) => `"${value}"`)
