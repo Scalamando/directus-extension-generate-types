@@ -1,4 +1,5 @@
 import { Collection, Collections, Field } from "lib/types";
+import pluralize from "pluralize-esm"
 
 interface CollectionType {
   identifier: string;
@@ -45,7 +46,7 @@ export class TypeBuilder {
 
     return {
       identifier: collection.collection,
-      typeName: this.pascalCase(collection.collection),
+      typeName: this.toTypeName(collection.collection),
       isSingleton: collection.meta?.singleton === true,
       fields,
     };
@@ -101,8 +102,8 @@ export class TypeBuilder {
         break;
       }
       case "any_type": {
-        type += field.relation.collections
-          .map((collection) => `"${this.pascalCase(collection)}"`)
+        type = field.relation.collections
+          .map((collection) => `"${this.toTypeName(collection)}"`)
           .join(" | ");
         break;
       }
@@ -117,10 +118,10 @@ export class TypeBuilder {
 
       if (field.relation.type === "any") {
         // m2a collections have multiple related types
-        type += field.relation.collections.map(this.pascalCase).join(" | ");
+        type += field.relation.collections.map((s) => this.toTypeName(s)).join(" | ");
       } else {
         type += field.relation.collection
-          ? this.pascalCase(field.relation.collection)
+          ? this.toTypeName(field.relation.collection)
           : "any";
         if (field.relation.type === "many") type += "[]";
       }
@@ -214,6 +215,10 @@ export class TypeBuilder {
   private enquote(str: string) {
     const needsQuotes = /[^0-9A-Za-z_$]/;
     return needsQuotes.test(str) ? `"${str}"` : str;
+  }
+
+  private toTypeName(str: string) {
+    return pluralize(this.pascalCase(str), 1);
   }
 
   private pascalCase(str: string) {
