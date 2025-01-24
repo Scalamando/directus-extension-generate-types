@@ -64,7 +64,7 @@ export class TypeBuilder {
 
     for (const c of collections) {
       const fieldStr = (f: FieldType) =>
-        `  ${f.identifier}${f.isNullable && !this.isSdk11 ? "?" : ""}: ${f.type}${f.isNullable ? " | null" : ""};`;
+        `  ${f.identifier}: ${f.type}${f.isNullable ? " | null" : ""};`;
 
       typeStr +=
         `export interface ${c.typeName} {\n` +
