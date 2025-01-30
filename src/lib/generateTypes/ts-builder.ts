@@ -105,7 +105,7 @@ export class TypeBuilder {
       }
       case "any_type": {
         type = field.relation.collections
-          .map((collection) => `"${this.toTypeName(collection)}"`)
+          .map((collection) => `"${collection}"`)
           .join(" | ");
         break;
       }
